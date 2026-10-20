@@ -5,15 +5,15 @@ import { CSSProperties, useEffect, useState } from "react";
 import Handsfree from 'handsfree'
 import testImage from "../public/landscape.jpeg"
 
+const originalDistance = 0.112
+
 export default function Home() {
   // const [mode, setMode] = useState<"debug" | "default">(() => "debug")
   const [left, setLeft] = useState(() => [0, 0])
   const [right, setRight] = useState(() => [0, 0])
   const [face, setFace] = useState(() => [0, 0])
 
-  
-
-  
+  const [distance, setDistance] = useState(() => originalDistance)
 
   useEffect(() => {
     const handsfree = new Handsfree({
@@ -36,13 +36,13 @@ export default function Home() {
       setRight([1 - rightL.x, rightL.y]) // 1- because the webcam is mirrored
       setFace([1 - faceL.x, faceL.y])
 
-      const distance = right[0] - left[0]
-      console.log(distance)
+      const distanceL = leftL.x - rightL.x
+      setDistance(distanceL)
     }))
   }, [])
 
   return (
-    <div className="w-dvw h-dvh" style={{ transform: "scale(1)"}}>
+    <div className="w-dvw h-dvh" style={{ transform: `scale(${distance / originalDistance})`}}>
       <Image src={testImage} alt="tets image" className="w-[512px] h-auto m-auto"/>
 
       <p className="absolute text-[#f0f] text-center text-[32px] -translate-1/2" style={coordToPositionClass(left)}>L</p>
@@ -54,13 +54,11 @@ export default function Home() {
 
 function coordToPositionClass(point: number[]): CSSProperties {
   return ({
-    left: toScreen(point[0], "w"),
-    top: toScreen(point[1], "h")
+    left: toScreen(point[0]),
+    top: toScreen(point[1])
   })
 }
 
-function toScreen(p: number, type: "w" | "h"): string {
-  if (typeof window === "undefined") return `-10px`
-  const length = (type === "w" ? window.innerWidth : window.innerHeight)
-  return `${length * p}px`
+function toScreen(p: number): string {
+  return `${p * 100}%`
 }
