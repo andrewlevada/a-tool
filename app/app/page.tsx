@@ -4,16 +4,15 @@ import Image from "next/image";
 import { CSSProperties, useEffect, useState } from "react";
 import Handsfree from 'handsfree'
 import testImage from "../public/landscape.jpeg"
+import { Landmarks } from "./landmarks";
+import { useLandmarksQueue } from "./queue";
 
-const originalDistance = 0.112
+const factorForScale = 0.9
+const factorForWidth = 0.9
 
 export default function Home() {
-  // const [mode, setMode] = useState<"debug" | "default">(() => "debug")
-  const [left, setLeft] = useState(() => [0, 0])
-  const [right, setRight] = useState(() => [0, 0])
-  const [face, setFace] = useState(() => [0, 0])
-
-  const [distance, setDistance] = useState(() => originalDistance)
+  const [mode, setMode] = useState<"debug" | "default">(() => "debug")
+  const [first, prev, now, push] = useLandmarksQueue()
 
   useEffect(() => {
     const handsfree = new Handsfree({
@@ -25,29 +24,28 @@ export default function Home() {
     document.addEventListener('handsfree-data', (_ => {
       const landmarks = handsfree.data.facemesh?.multiFaceLandmarks
       if (!landmarks) return
-
-      const faceLandmarks = landmarks[0]
-
-      const leftL = faceLandmarks[362]
-      const rightL = faceLandmarks[33]
-      const faceL = { x: (rightL.x + leftL.x) / 2 , y: (rightL.y + leftL.y) / 2 }
-
-      setLeft([1 - leftL.x, leftL.y]) // 1- because the webcam is mirrored
-      setRight([1 - rightL.x, rightL.y]) // 1- because the webcam is mirrored
-      setFace([1 - faceL.x, faceL.y])
-
-      const distanceL = leftL.x - rightL.x
-      setDistance(distanceL)
+      push(Landmarks.fromMesh(landmarks))
     }))
   }, [])
 
+  if (!now || !first) return(
+    <div>loading...</div>
+  )
+
   return (
-    <div className="w-dvw h-dvh" style={{ transform: `scale(${distance / originalDistance})`}}>
+    <div className="w-dvw h-dvh" style={{
+      transform: `
+        scale(${1 - factorForScale + (now.distanceBetweenEyes() / first.distanceBetweenEyes()) * factorForScale})
+        translateX(${(now.nose()[0] - first.nose()[0]) * 100 * factorForWidth}%)
+        translateY(${(now.nose()[1] - first.nose()[1]) * 100 * factorForWidth}%)
+      `
+    }}>
+      
       <Image src={testImage} alt="tets image" className="w-[512px] h-auto m-auto"/>
 
-      <p className="absolute text-[#f0f] text-center text-[32px] -translate-1/2" style={coordToPositionClass(left)}>L</p>
-      <p className="absolute text-[#f0f] text-center text-[32px] -translate-1/2" style={coordToPositionClass(right)}>R</p>
-      <p className="absolute text-[#0f0] text-center text-[32px] -translate-1/2" style={coordToPositionClass(face)}>nose</p>
+      <p className="absolute text-[#f0f] text-center text-[32px] -translate-1/2" style={coordToPositionClass(now.left)}>L</p>
+      <p className="absolute text-[#f0f] text-center text-[32px] -translate-1/2" style={coordToPositionClass(now.right)}>R</p>
+      <p className="absolute text-[#0f0] text-center text-[32px] -translate-1/2" style={coordToPositionClass(now.nose())}>nose</p>
     </div>
   );
 }
