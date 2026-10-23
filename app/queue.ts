@@ -1,33 +1,25 @@
-import { useRef, useState } from "react";
 import { Landmarks, smoothAndStabilize } from "./landmarks";
+import { createContext } from '@lit/context';
 
-export type UseLandmarksQueueReturnType = [
-    Landmarks | undefined, Landmarks | undefined, Landmarks | undefined, (_: Landmarks) => void
-]
+export const globalContextInstance = createContext<GlobalContext>('global');
 
-export function useLandmarksQueue(): UseLandmarksQueueReturnType {
-    const [queue, setQueue] = useState<LandmarksQueue>()
-    const ref = useRef(queue) // i really don't like react
+class LandmarksQueue {
 
-    const push = (landmarks: Landmarks): void => {
-        const queue = ref.current
+    // It would be ideal for these properties to be readonly in public,
+    // but settable in private, but i am not sure yet, how to do this
+    // without a setter + private property pair
 
-        const now = queue?.prev ? smoothAndStabilize(queue.prev, landmarks) : landmarks
-        const value: LandmarksQueue = {
-            first: queue?.first ?? landmarks,
-            prev: queue?.now,
-            now: now
-        }
+    public first?: Readonly<Landmarks>
+    public prev?: Landmarks
+    public now?: Landmarks
 
-        ref.current = value
-        setQueue(value)
+    public update(landmarks: Landmarks): void {
+        const now = this.prev ? smoothAndStabilize(this.prev, landmarks) : landmarks
+
+        this.first = this.first ?? landmarks
+        this.prev = this.now
+        this.now = now
     }
-
-    return [queue?.first, queue?.prev, queue?.now, push]
 }
 
-interface LandmarksQueue {
-    first?: Landmarks
-    prev?: Landmarks
-    now?: Landmarks
-}
+export class GlobalContext extends LandmarksQueue { }

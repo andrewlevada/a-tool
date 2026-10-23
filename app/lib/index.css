@@ -1,0 +1,22 @@
+@import 'tailwindcss';
+
+@layer base {
+  @import './reset.css';
+
+  :host {
+    display: block;
+  }
+
+  body {
+    font-size: 14px;
+  }
+
+  .flex-row, .flex-col {
+    display: flex;
+  }
+}
+
+/* This makes p-4 = p-[4px] */
+@theme {
+  --spacing: 1px
+}
