@@ -7,6 +7,7 @@ import { Landmarks } from "./landmarks";
 import { consume } from "@lit/context";
 import { GlobalContext, globalContextInstance } from "./queue";
 import testImage from "./landscape.jpeg"
+import { styleMap } from "lit/directives/style-map.js";
 
 @customElement("test-page")
 export class TestPage extends AutoLitElement {
@@ -33,6 +34,7 @@ export class TestPage extends AutoLitElement {
 			this.landmarks.update(
 				Landmarks.fromMesh(landmarks)
 			)
+			this.requestUpdate()
 		}))
 	}
 	
@@ -47,8 +49,8 @@ export class TestPage extends AutoLitElement {
 		}
 
 		return html`
-			<div class="w-dvw h-dvh" .style=${this.rootTransformStyle()}>
-				<img .src=${this.imageData || testImage} alt="tets image" class="w-512 h-auto m-auto hover:opacity-85 cursor-pointer" @click=${() => {
+			<div class="w-dvw h-dvh" style=${this.rootTransformStyle()}>
+				<img .src=${this.imageData || testImage} alt="tets image" class="w-512 h-auto m-auto hover:opacity-85 cursor-pointer" width=512 height=512 @click=${() => {
 					this.inputRef.value?.click()
 				}}/>
 
@@ -65,20 +67,20 @@ export class TestPage extends AutoLitElement {
 					reader.readAsDataURL(file)
 				}}></input>
 
-				<p class="absolute text-[#f0f] text-center text-[32px] -translate-1/2" .style=${coordToPositionClass(this.landmarks.now.left)}>L</p>
-				<p class="absolute text-[#f0f] text-center text-[32px] -translate-1/2" .style=${coordToPositionClass(this.landmarks.now.right)}>R</p>
-				<p class="absolute text-[#0f0] text-center text-[32px] -translate-1/2" .style=${coordToPositionClass(this.landmarks.now.nose())}>nose</p>
+				<p class="absolute text-[#f0f] text-center text-[32px] -translate-1/2" style=${coordToPositionClass(this.landmarks.now.left)}>L</p>
+				<p class="absolute text-[#f0f] text-center text-[32px] -translate-1/2" style=${coordToPositionClass(this.landmarks.now.right)}>R</p>
+				<p class="absolute text-[#0f0] text-center text-[32px] -translate-1/2" style=${coordToPositionClass(this.landmarks.now.nose())}>nose</p>
     		</div>
 		`
 	}
 
-	private rootTransformStyle(): Partial<CSSStyleProperties> {
+	private rootTransformStyle(): ReturnType<typeof styleMap> {
 		if (!this.landmarks.first || !this.landmarks.now) return {}
 
 		const factorForScale = 1
 		const factorForWidth = 1
 
-		return ({
+		return styleMap({
 			transform: `
         		scale(${1 - factorForScale + (this.landmarks.now.distanceBetweenEyes() / this.landmarks.first.distanceBetweenEyes()) * factorForScale})
         		translateX(${(this.landmarks.now.nose()[0] - this.landmarks.first.nose()[0]) * 100 * factorForWidth}%)
@@ -88,8 +90,8 @@ export class TestPage extends AutoLitElement {
 	}
 }
 
-function coordToPositionClass(point: number[]): Partial<CSSStyleProperties> {
-  return ({
+function coordToPositionClass(point: number[]): ReturnType<typeof styleMap> {
+  return styleMap({
     left: toScreen(point[0]),
     top: toScreen(point[1])
   })
